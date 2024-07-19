@@ -26,3 +26,20 @@ $ cp .env.example .env
 ```
 
 Set your environment variables in the `.env` file. Like `OPENAI_API_KEY` value.
+
+## Run the FastAPI server
+
+The default way to run the FastAPI app using `uvicorn` 
+
+```bash
+$ uvicorn app:app 
+```
+
+- First `app` refers to the Python module name that contains your FastAPI application. 
+- Second `app` is the ASGI application instance inside the specified module. 
+
+### (Optional) Add more details to the run
+
+- `--reload` - To allow the app to refresh automatically with any change you made.
+- `--host 0.0.0.0` - To let every one outside your server to access this API.
+- `--port` - To change the port where you want to run the app, default is `8000`.
