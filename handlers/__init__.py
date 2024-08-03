@@ -1,1 +1,8 @@
-from .data_handler import DataHandler
+from .file_handler import (
+    FileHandler, 
+    FileMetadata, 
+    FileLoader,
+    TextFileLoader,
+    PDFFileLoader, 
+    TextFileSplitter
+)
