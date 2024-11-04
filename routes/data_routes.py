@@ -33,8 +33,10 @@ async def upload_file(
 ) -> JSONResponse:
     
     # determine file path to write
-    file_name = data_handler.generate_unique_file_name(file.filename)
-    file_path = os.path.join(data_handler.base_files_path, file_name)
+    # file_name = data_handler.generate_unique_file_name(file.filename)
+    # file_path = os.path.join(data_handler.base_files_path, file_name)
+    file_name = file_handler.generate_unique_file_name(file.filename)
+    file_path = os.path.join(file_handler.base_files_path, file_name)
     logger.info(f'Writing {file_path} on disk ..')
     
     try:
@@ -42,7 +44,6 @@ async def upload_file(
             while chunk := await file.read(app_settings.FILE_CHUNK_SIZE_BYTES):
                 await f.write(chunk)
     except Exception as e:
-
         logger.error(e)
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,13 +68,20 @@ async def load_and_split_file(
     """Load file and split it into chunks"""
     
     file_name = file_metadata.file_name
+    chunk_size = file_metadata.chunk_size
+    overlap_size = file_metadata.overlap_size
+    
     logger.info(f'loading {file_name} ...')
     
-    file_loader = file_handler.get_file_loader(file_name)
-    file_content = file_loader.load()
+    # file_loader = file_handler.get_file_loader(file_name)
+    # file_content = file_loader.load()
     
-    text_splitter = file_handler.get_text_file_splitter(file_metadata)
-    text_chunks = text_splitter.chunk_text_content(file_content)
+    file_content = file_handler.load_file(file_name)
+    
+    # text_splitter = file_handler.get_text_file_splitter(file_metadata)
+    # text_chunks = text_splitter.chunk_text_content(file_content)
+    
+    text_chunks = file_handler.split_text_to_chunks(file_content)
     
     if not text_chunks:
         return JSONResponse(

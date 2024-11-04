@@ -22,6 +22,7 @@ class FileMetadata:
     chunk_size: Optional[int] = 200
     overlap_size: Optional[int] = 20
 
+'''
 @dataclass
 class FileLoader(ABC):
     
@@ -89,7 +90,7 @@ class CharacterTextFileSplitter(TextFileSplitter):
             chunk_overlap=self.file_metadata.overlap_size,
             length_function=len
         )
-
+'''
 
 class FileHandler(BaseHandler):
 
@@ -119,18 +120,7 @@ class FileHandler(BaseHandler):
 
         return file
     
-    def generate_unique_file_name(
-        self,
-        orig_file_name: str
-    ) -> str:
-        
-        now = datetime.now()
-        datetime_str = now.strftime('%Y%m%d%H%M%S')
-        base, ext = os.path.splitext(orig_file_name)
-        unique_file_name = f'{base}-{datetime_str}{ext}'
-        return unique_file_name
-    
-    def get_file_loader(self, file_name: str) -> FileLoader:
+    def load_file(self, file_name: str) -> List:   # were FileLoader
         """Get file loader based on the file extension"""
         file_ext = os.path.splitext(file_name)[1]
         file_path = os.path.join(self.base_files_path, file_name)
@@ -145,15 +135,49 @@ class FileHandler(BaseHandler):
             )
         
         if file_ext == '.txt':
-            return TextFileLoader(file_path)
+            # return TextFileLoader(file_path)
+            return TextLoader(file_path).load()
         elif file_ext == '.pdf':
-            return PDFFileLoader(file_path)
+            # return PDFFileLoader(file_path)
+            return PyMuPDFLoader(file_path).load()
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, 
                 detail=Message.FILE_EXT_NOT_SUPPORTED.format(file_extension=file_ext))
     
+    '''
     def get_text_file_splitter(self, file_metadata: FileMetadata) -> TextFileSplitter:
         """Get appropriate text file splitter"""
         return CharacterTextFileSplitter(file_metadata)
-                
+    '''
+    
+    def split_text_to_chunks(self, file_content: List[Dict], chunk_size: int, overlap_size: int):
+        """Split the extracted text into chunks for storing and processing"""
+        
+        file_content_texts = [
+            rec.page_content
+            for rec in file_content
+        ]
+
+        file_content_metadata = [
+            rec.metadata
+            for rec in file_content
+        ]
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=overlap_size,
+            length_function=len
+        )
+
+        chunks = text_splitter.create_documents(
+            file_content_texts,
+            metadatas=file_content_metadata
+        )
+        
+        chunks_serialized = [{
+            "page_content": chunk.page_content, 
+            "metadata": chunk.metadata
+        } for chunk in chunks]
+
+        return chunks_serialized
