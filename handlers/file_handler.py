@@ -3,7 +3,6 @@ from helpers.messages import Message
 from handlers.base_handler import BaseHandler
 
 from fastapi import UploadFile, File, Depends, HTTPException, status
-from datetime import datetime
 from typing import List, Dict, Optional
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
@@ -22,75 +21,6 @@ class FileMetadata:
     chunk_size: Optional[int] = 200
     overlap_size: Optional[int] = 20
 
-'''
-@dataclass
-class FileLoader(ABC):
-    
-    file_path: str
-    
-    @abstractmethod
-    def load(self) -> List[Document]:
-        """Abstract method to load file content"""
-        
-class TextFileLoader(FileLoader):
-    
-    def load(self):
-        loader = TextLoader(self.file_path)
-        return loader.load()
-    
-class PDFFileLoader(FileLoader):
-    
-    def load(self):
-        loader = PyMuPDFLoader(self.file_path)
-        return loader.load()
-
-@dataclass
-class TextFileSplitter(ABC):
-    
-    file_metadata: FileMetadata
-    
-    @property
-    @abstractmethod
-    def text_splitter(self):
-        """"Abstract method to load langchain text splitter"""
-
-    def chunk_text_content(
-        self, 
-        file_content: List[Dict]): 
-        
-        file_content_texts = [
-            rec.page_content
-            for rec in file_content
-        ]
-
-        file_content_metadata = [
-            rec.metadata
-            for rec in file_content
-        ]
-
-        chunks = self.text_splitter.create_documents(
-            file_content_texts,
-            metadatas=file_content_metadata
-        )
-        
-        chunks_serialized = [{
-            "page_content": chunk.page_content, 
-            "metadata": chunk.metadata
-        } for chunk in chunks]
-
-        return chunks_serialized
-
-
-class CharacterTextFileSplitter(TextFileSplitter):
-    
-    @property
-    def text_splitter(self):
-        return RecursiveCharacterTextSplitter(
-            chunk_size=self.file_metadata.chunk_size,
-            chunk_overlap=self.file_metadata.overlap_size,
-            length_function=len
-        )
-'''
 
 class FileHandler(BaseHandler):
 
@@ -120,6 +50,7 @@ class FileHandler(BaseHandler):
 
         return file
     
+    
     def load_file(self, file_name: str) -> List:   # were FileLoader
         """Get file loader based on the file extension"""
         file_ext = os.path.splitext(file_name)[1]
@@ -135,21 +66,14 @@ class FileHandler(BaseHandler):
             )
         
         if file_ext == '.txt':
-            # return TextFileLoader(file_path)
             return TextLoader(file_path).load()
         elif file_ext == '.pdf':
-            # return PDFFileLoader(file_path)
             return PyMuPDFLoader(file_path).load()
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, 
                 detail=Message.FILE_EXT_NOT_SUPPORTED.format(file_extension=file_ext))
-    
-    '''
-    def get_text_file_splitter(self, file_metadata: FileMetadata) -> TextFileSplitter:
-        """Get appropriate text file splitter"""
-        return CharacterTextFileSplitter(file_metadata)
-    '''
+            
     
     def split_text_to_chunks(self, file_content: List[Dict], chunk_size: int, overlap_size: int):
         """Split the extracted text into chunks for storing and processing"""
